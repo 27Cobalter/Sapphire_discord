@@ -31,7 +31,7 @@ namespace Sapphire
         public async Task SendAudio(Channel vChannel, string filepath)
         {
             await JoinChannel(vChannel);
-            SendAudio(filepath);
+            PlayAudio(vChannel, filepath);
         }
 
         private async Task JoinChannel(Channel vChannel)
@@ -39,14 +39,20 @@ namespace Sapphire
             VoiceClient = await Client.GetService<AudioService>().Join(vChannel);
         }
 
-        private void SendAudio(string filepath)
+        private async void LeaveChannel(Channel vChannel)
+        {
+            Console.WriteLine("leave");
+            await Client.GetService<AudioService>().Leave(vChannel);
+        }
+
+        private void PlayAudio(Channel vChannel, string filepath)
         {
             if (!System.IO.File.Exists(filepath))
                 throw new Exception("not found " + filepath);
 
             var channelCount = Client.GetService<AudioService>().Config.Channels;
             var OutFormat = new WaveFormat(48000, 16, channelCount);
-            using(AudioFileReader Reader = new AudioFileReader(filepath))
+            using (AudioFileReader Reader = new AudioFileReader(filepath))
             using (var resampler = new MediaFoundationResampler(Reader, OutFormat))
             {
                 resampler.ResamplerQuality = 60;
@@ -65,7 +71,9 @@ namespace Sapphire
                     }
                     VoiceClient.Send(buffer, 0, blockSize);
                 }
+                System.Threading.Thread.Sleep(2000);
                 _exeflag = false;
+                LeaveChannel(vChannel);
             }
         }
     }
