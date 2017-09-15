@@ -1,0 +1,84 @@
+﻿using Discord;
+using Discord.Audio;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Sapphire
+{
+    class Program
+    {
+        static void Main(string[] args) => new Program().Start();
+
+        private DiscordClient _client;
+        private Voice vo;
+
+        public void Start()
+        {
+            Console.WriteLine("Sapphire is get up!");
+            _client = new DiscordClient();
+            _client.UsingAudio(x =>
+            {
+                x.Mode = AudioMode.Outgoing;
+            });
+
+            _client.MessageReceived += async (s, e) =>
+            {
+                Console.WriteLine(e.Server.ToString() + " -> #" + e.Channel.ToString() + " -> " + e.User.ToString() + "\"" + e.Message.Text.ToString() + "\"");
+                //コマンド記述
+                if (e.Message.Text.ToString().Substring(0, 1).Equals(":"))
+                {
+                    string[] messageArr = e.Message.Text.ToString().Split();
+                    List<string> message = new List<string>(messageArr);
+                    //IPコマンド
+                    if (message[0].Equals(":ip"))
+                    {
+                        WebClient wclient = new WebClient();
+                        string page = wclient.DownloadString("https://www.cman.jp/network/support/go_access.cgi");
+                        System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("<div class=\"outIp\">(?<text>.*?)</div>");
+                        string ipadd = regex.Match(page).Groups["text"].Value;
+                        Console.WriteLine(ipadd);
+                        await e.Channel.SendMessage(ipadd);
+                        Console.WriteLine(message.Count);
+                    }
+                    else if (message[0].Equals(":voice"))
+                    {
+                        if (vo != null)
+                        {
+                            vo.Audioflag(false);
+                            System.Threading.Thread.Sleep(1000);
+                            vo.Audioflag(true);
+                        }
+
+                        if (!message[1].Equals("stop"))
+                        {
+                            vo = new Voice(_client);
+                            System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\"(?<text>.*?)\"");
+                            try
+                            {
+                                await vo.SendAudio(e.User.VoiceChannel, regex.Match(e.Message.Text).Groups["text"].Value);
+                            }
+                            catch (Exception exception)
+                            {
+                                Console.WriteLine(exception.Message);
+                                await e.Channel.SendMessage(exception.Message);
+                            }
+                        }
+                    }
+                }
+                else
+                    await Task.Delay(100);
+            };
+
+            _client.ExecuteAndWait(async () =>
+            {
+                await _client.Connect("MjU3ODgyMzk5MzMxOTc1MTY5.CzBLdQ.WiXHPHMSHiTvm4D7vCPq5LH0D7k", TokenType.Bot);
+            });
+
+
+        }
+    }
+}
