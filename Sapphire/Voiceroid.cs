@@ -71,10 +71,10 @@ namespace Sapphire
 
         public void SaveText(string text)
         {
-            if (System.IO.File.Exists("T:\\Sapphire\\tmp.wav"))
+            if (System.IO.File.Exists("C:\\Sapphire\\tmp.wav"))
             {
-                System.IO.File.Delete("T:\\Sapphire\\tmp.wav");
-                System.IO.File.Delete("T:\\Sapphire\\tmp.txt");
+                System.IO.File.Delete("C:\\Sapphire\\tmp.wav");
+                System.IO.File.Delete("C:\\Sapphire\\tmp.txt");
                 System.Threading.Thread.Sleep(50);
             }
             SendMessage(Yukari.Content, text);

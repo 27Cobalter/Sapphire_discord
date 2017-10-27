@@ -97,7 +97,7 @@ namespace Sapphire
                                 vo = new Voice(_client);
                                 try
                                 {
-                                    await vo.SendAudio(e.User.VoiceChannel, "T:\\Sapphire\\tmp.wav");
+                                    await vo.SendAudio(e.User.VoiceChannel, "C:\\Sapphire\\tmp.wav");
                                 }
                                 catch (Exception exception)
                                 {
@@ -129,7 +129,7 @@ namespace Sapphire
                                 vo = new Voice(_client);
                                 try
                                 {
-                                    await vo.SendAudio(e.User.VoiceChannel, "T:\\Sapphire\\cevio.wav");
+                                    await vo.SendAudio(e.User.VoiceChannel, "C:\\Sapphire\\cevio.wav");
                                 }
                                 catch (Exception exception)
                                 {
@@ -211,7 +211,7 @@ namespace Sapphire
                     vo = new Voice(_client);
                     try
                     {
-                        await vo.SendAudio(chan, "T:\\Sapphire\\cevio.wav");
+                        await vo.SendAudio(chan, "C:\\Sapphire\\cevio.wav");
                     }
                     catch (Exception exception)
                     {

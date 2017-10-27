@@ -17,9 +17,9 @@ namespace Sapphire
         public void SaveText(string text, string cast, uint tone = 70, uint volume = 100)
         {
             ServiceControl.StartHost(false);
-            if (System.IO.File.Exists("T:\\Sapphire\\cevio.wav"))
+            if (System.IO.File.Exists("C:\\Sapphire\\cevio.wav"))
             {
-                System.IO.File.Delete("T:\\Sapphire\\cevio.wav");
+                System.IO.File.Delete("C:\\Sapphire\\cevio.wav");
                 System.Threading.Thread.Sleep(50);
             }
             talker.Cast = cast;
@@ -37,7 +37,7 @@ namespace Sapphire
             {
 
             }
-            talker.OutputWaveToFile(text, "T:\\Sapphire\\cevio.wav") ;
+            talker.OutputWaveToFile(text, "C:\\Sapphire\\cevio.wav") ;
         }
     }
 }
