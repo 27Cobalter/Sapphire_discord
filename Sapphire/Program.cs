@@ -1,240 +1,126 @@
-﻿using CeVIO.Talk.RemoteService;
-using Discord;
-using Discord.Audio;
+﻿using Discord;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Discord.WebSocket;
+using Discord.Audio;
+using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
+using Sapphire;
 
-namespace Sapphire
+namespace test
 {
     class Program
     {
-        static void Main(string[] args) => new Program().Start();
+        private AudioService _audio;
+        private CeVIOService _cevio;
+        private CommandService _commands;
+        private DiscordSocketClient _client;
+        private VoiceroidService _voiceroid;
+        private IServiceProvider _services;
 
-        private DiscordClient _client;
-        private Voice vo;
-        private bool enable = true;
+        static void Main(string[] args)
+            => new Program().MainAsync().GetAwaiter().GetResult();
 
-        public void Start()
+        [Command(RunMode=RunMode.Async)]
+        public async Task MainAsync()
         {
-            ServiceControl.StartHost(false);
-            Console.WriteLine("Sapphire is get up!");
-            _client = new DiscordClient();
-            _client.UsingAudio(x =>
+            _audio = new AudioService();
+            _cevio = new CeVIOService("IA");
+            _client = new DiscordSocketClient();
+            _commands = new CommandService();
+            _voiceroid = new VoiceroidService();
+
+            _services = new ServiceCollection()
+                .AddSingleton(_client)
+                .AddSingleton(_commands)
+                .AddSingleton(_audio)
+                .BuildServiceProvider();
+
+            _client.Log += Log;
+            _client.MessageReceived += MessageReceived;
+
+            string token = "MjU3ODgyMzk5MzMxOTc1MTY5.DR_jng.ObBVCK81UMQULR33YMSrVodocm4";
+            await _client.LoginAsync(TokenType.Bot, token);
+            await _client.StartAsync();
+
+            await Task.Delay(-1);
+        }
+
+        private Task Log(LogMessage msg)
+        {
+            Console.WriteLine(msg.ToString());
+            return Task.CompletedTask;
+        }
+
+        [Command(RunMode = RunMode.Async)]
+        private async Task MessageReceived(SocketMessage message)
+        {
+            string[] messageArr = message.Content.Split();
+            string command = messageArr[0];
+            if (command== ":ping")
             {
-                x.Mode = AudioMode.Outgoing;
-            });
-
-            _client.MessageReceived += async (s, e) =>
+                await message.Channel.SendMessageAsync("Pong!");
+            }
+            else if (command== ":join")
             {
-                Console.WriteLine(e.Server.ToString() + " -> #" + e.Channel.ToString() + " -> " + e.User.ToString() + "\"" + e.Message.Text.ToString() + "\"");
-                if (!e.Message.Text.ToString().Equals(""))
-                {
-                    //コマンド記述
-                    if (e.Message.Text.ToString().Substring(0, 1).Equals(":") && enable)
-                    {
-                        string[] messageArr = e.Message.Text.ToString().Split();
-                        List<string> message = new List<string>(messageArr);
-                        System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\"(?<text>.*?)\"");
-                        //IPコマンド
-                        if (message[0].Equals(":ip"))
-                        {
-                            WebClient wclient = new WebClient();
-                            string page = wclient.DownloadString("https://www.cman.jp/network/support/go_access.cgi");
-                            System.Text.RegularExpressions.Regex ipregex = new System.Text.RegularExpressions.Regex("<div class=\"outIp\">(?<text>.*?)</div>");
-                            string ipadd = ipregex.Match(page).Groups["text"].Value;
-                            Console.WriteLine(ipadd);
-                            await e.Channel.SendMessage(ipadd);
-                        }
-                        else if (message[0].Equals(":voice"))
-                        {
-                            if (vo != null)
-                            {
-                                if (vo.Exeflag())
-                                {
-                                    vo.Audioflag(false);
-                                    System.Threading.Thread.Sleep(1000);
-                                    vo.Audioflag(true);
-                                }
-                            }
-
-                            if (!(message[1].Equals("stop")))
-                            {
-                                vo = new Voice(_client);
-                                try
-                                {
-                                    await vo.SendAudio(e.User.VoiceChannel, regex.Match(e.Message.Text).Groups["text"].Value);
-                                }
-                                catch (Exception exception)
-                                {
-                                    Console.WriteLine(exception.Message);
-                                    await e.Channel.SendMessage(exception.Message);
-                                }
-                            }
-                        }
-                        else if (message[0].Equals(":yukari"))
-                        {
-                            if (regex.IsMatch(e.Message.Text))
-                            {
-                                enable = false;
-                                Voiceroid Yukari = new Voiceroid();
-                                Yukari.SaveText(regex.Match(e.Message.Text).Groups["text"].Value);
-                                enable = true;
-
-                                if (vo != null)
-                                {
-                                    if (vo.Exeflag())
-                                    {
-                                        vo.Audioflag(false);
-                                        System.Threading.Thread.Sleep(1000);
-                                        vo.Audioflag(true);
-                                    }
-                                }
-
-                                vo = new Voice(_client);
-                                try
-                                {
-                                    await vo.SendAudio(e.User.VoiceChannel, "C:\\Sapphire\\tmp.wav");
-                                }
-                                catch (Exception exception)
-                                {
-                                    Console.WriteLine(exception.Message);
-                                    await e.Channel.SendMessage(exception.Message);
-                                }
-                            }
-                        }
-                        else if (message[0].Equals(":ia") || message[0].Equals(":one"))
-                        {
-                            if (regex.IsMatch(e.Message.Text))
-                            {
-                                enable = false;
-                                CeVIOVoice cevi = new CeVIOVoice();
-                                bool flag = message[0].Equals(":ia");
-                                cevi.SaveText(regex.Match(e.Message.Text).Groups["text"].Value, flag ? "IA" : "ONE");
-                                enable = true;
-
-                                if (vo != null)
-                                {
-                                    if (vo.Exeflag())
-                                    {
-                                        vo.Audioflag(false);
-                                        System.Threading.Thread.Sleep(1000);
-                                        vo.Audioflag(true);
-                                    }
-                                }
-
-                                vo = new Voice(_client);
-                                try
-                                {
-                                    await vo.SendAudio(e.User.VoiceChannel, "C:\\Sapphire\\cevio.wav");
-                                }
-                                catch (Exception exception)
-                                {
-                                    Console.WriteLine(exception.Message);
-                                    await e.Channel.SendMessage(exception.Message);
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                    await Task.Delay(100);
-            };
-
-            _client.UserUpdated += async (s, e) =>
+                IGuild guild = (message.Author as IGuildUser).Guild;
+                IVoiceChannel voiceChannel = (message.Author as IGuildUser).VoiceChannel;
+                var process = _audio.JoinChannel(guild, voiceChannel);
+            }
+            else if (command== ":leave")
             {
-                if (e.Before.Name.Equals("Sapphire") || !enable) return;
-                if (e.Before.VoiceChannel == e.After.VoiceChannel) return;
-                enable = false;
-                string mes = null;
-                Channel chan;
-                int chnum;
-                if (e.After.VoiceChannel == null)
-                {
-                    try
-                    {
-                        if (e.Before.VoiceChannel.Users.Count() == 0)
-                            return;
-                    }
-                    catch { return; }
-                    chnum = 1;
-                    mes = e.After.Name + "さんが" + e.Before.VoiceChannel + "から退出しました";
-                    chan = e.Before.VoiceChannel;
-                    Console.WriteLine(mes);
-                }
-                else if (e.Before.VoiceChannel == null)
-                {
-                    try
-                    {
-                        if (e.After.VoiceChannel.Users.Count() == 0)
-                            return;
-                    }
-                    catch { return; }
-                    chnum = 1;
-                    mes = e.After.Name + "さんが" + e.After.VoiceChannel + "に入室しました";
-                    chan = e.After.VoiceChannel;
-                    Console.WriteLine(mes);
-                }
-                else
-                {
-                    try
-                    {
-                        if (e.Before.VoiceChannel.Users.Count() == 0)
-                            return;
-                        chnum = 2;
-                    }
-                    catch { chnum = 1; }
-                    mes = e.After.Name + "さんが" + e.Before.VoiceChannel + "から" + e.After.VoiceChannel + "へ移動しました";
-                    chan = e.Before.VoiceChannel;
-                    Console.WriteLine(mes);
-                }
-
-                CeVIOVoice cevi = new CeVIOVoice();
-                bool flag = (Environment.TickCount % 2 == 1);
-                cevi.SaveText(mes, flag ? "IA" : "ONE");
-
-                if (vo != null)
-                {
-                    if (vo.Exeflag())
-                    {
-                        vo.Audioflag(false);
-                        System.Threading.Thread.Sleep(1000);
-                        vo.Audioflag(true);
-                    }
-                }
-
-                for (int i = 0; i < chnum; i++)
-                {
-                    vo = new Voice(_client);
-                    try
-                    {
-                        await vo.SendAudio(chan, "C:\\Sapphire\\cevio.wav");
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine(exception.Message);
-                        await Task.Delay(100);
-                    }
-                    if (chnum == 2)
-                    {
-                        while (vo.Exeflag()) ;
-                        System.Threading.Thread.Sleep(1000);
-                        chan = e.After.VoiceChannel;
-                        await _client.GetService<AudioService>().Join(chan);
-                    }
-                }
-                enable = true;
-            };
-
-            _client.ExecuteAndWait(async () =>
+                IGuild guild = (message.Author as IGuildUser).Guild;
+                var process = _audio.LeaveChannel((message.Author as IGuildUser).Guild);
+            }
+            else if (command== ":ppp")
             {
-                await _client.Connect("MjU3ODgyMzk5MzMxOTc1MTY5.CzBLdQ.WiXHPHMSHiTvm4D7vCPq5LH0D7k", TokenType.Bot);
-            });
+                IGuild guild = (message.Author as IGuildUser).Guild;
+                var process = _audio.SendAudioAsync(guild, message.Channel, "C:\\Sapphire\\tmp.wav");
+            }
+            else if (command== ":play")
+            {
+                IGuild guild = (message.Author as IGuildUser).Guild;
+                var process = _audio.SendAudioAsync(guild, message.Channel, "C:\\Sapphire\\aaa.wav");
+            }
+            else if (command== ":IA")
+            {
+                IGuild guild = (message.Author as IGuildUser).Guild;
+                var sleep = _cevio.play(_audio, guild, message.Channel, "いあちゃんです");
+            }
+            else if (command== ":yukari")
+            {
+                IGuild guild = (message.Author as IGuildUser).Guild;
+                _voiceroid.setCast("結月ゆかり");
+                string text = getParam(message);
+                if (text == null)
+                {
+                    text = "にゃーん";
+                }
+                    var process = _voiceroid.play(_audio, guild, message, text);
+            }else if(command== ":akari")
+            {
+                IGuild guild = (message.Author as IGuildUser).Guild;
+                _voiceroid.setCast("紲星あかり");
+                string text = getParam(message);
+                if (text == null)
+                {
+                    text = "にゃーん";
+                }
+                    var process = _voiceroid.play(_audio, guild, message, text);
+            }
+        }
 
-
+        public string getParam(SocketMessage message)
+        {
+            System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\"(?<text>.*?)\"");
+            if (regex.IsMatch(message.Content))
+            {
+                return regex.Match(message.Content).Groups["text"].Value;
+            }
+            return null;
         }
     }
 }
