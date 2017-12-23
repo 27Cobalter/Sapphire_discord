@@ -42,7 +42,7 @@ namespace test
             _client.Log += Log;
             _client.MessageReceived += MessageReceived;
 
-            string token = "MjU3ODgyMzk5MzMxOTc1MTY5.DR_jng.ObBVCK81UMQULR33YMSrVodocm4";
+            string token = "token";
             await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
