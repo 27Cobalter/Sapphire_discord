@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
-using Discord.Commands;
 
 namespace Sapphire
 {
@@ -39,23 +35,22 @@ namespace Sapphire
         public async Task LeaveChannel(IGuild guild)
         {
             IAudioClient client;
-            if(ConnectedChannels.TryRemove(guild.Id,out client))
+            if (ConnectedChannels.TryRemove(guild.Id, out client))
             {
                 await client.StopAsync();
                 await Log($"Disconnected to voice on {guild.Name}");
             }
         }
 
-        public async Task SendAudioAsync(IGuild guild, IMessageChannel channel, string path)
+        public async Task SendAudioAsync(IGuild guild, string path)
         {
             if (!File.Exists(path))
             {
-                await channel.SendMessageAsync("File does not exist.");
                 await Log($"File does not exist {path}");
                 return;
             }
             IAudioClient client;
-            if(ConnectedChannels.TryGetValue(guild.Id,out client))
+            if (ConnectedChannels.TryGetValue(guild.Id, out client))
             {
 
                 await Log($"Starting playback of {path} in {guild.Name}");
@@ -73,16 +68,28 @@ namespace Sapphire
             return Process.Start(new ProcessStartInfo
             {
                 FileName = "ffmpeg.exe",
-                Arguments = $"-i \"{path}\" -ac 2 -f s16le -ar 46000 pipe:1",
+                Arguments = $"-i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });
         }
-        
+
         private Task Log(String msg)
         {
             Console.WriteLine(msg);
             return Task.CompletedTask;
+        }
+
+        public async Task play(AudioService audio, IGuild guild, IVoiceChannel channel, string path)
+        {
+            if (path == null)
+            {
+                path = "C:\\Sapphire\\tmp.wav";
+            }
+            await audio.JoinChannel(guild, channel);
+            await audio.SendAudioAsync(guild, path);
+            await audio.LeaveChannel(guild);
+
         }
     }
 }

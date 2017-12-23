@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using System.Windows.Automation;
 using System.Diagnostics;
 using System.Threading;
-using Discord.WebSocket;
 
 namespace Sapphire
 {
@@ -18,7 +15,7 @@ namespace Sapphire
         Dictionary<string, string> casts = new Dictionary<string, string>();
         string header;
 
-        public VoiceroidService()
+        public VoiceroidService(string cast = "結月ゆかり")
         {
             hWnd = IntPtr.Zero;
             while (hWnd == IntPtr.Zero)
@@ -31,18 +28,17 @@ namespace Sapphire
             }
             casts.Add("結月ゆかり", "結月ゆかり(v1)＞");
             casts.Add("紲星あかり", "紲星あかり＞");
-            header = casts["結月ゆかり"];
+            header = casts[cast];
         }
-        public async Task play(AudioService audio, IGuild guild,SocketMessage message,string msg,string path=null)
+        public async Task play(AudioService audio, IGuild guild, IVoiceChannel channel, string msg, string path = null)
         {
             if (path == null)
             {
                 path = "C:\\Sapphire\\tmp.wav";
             }
-            IVoiceChannel channel = (message.Author as IGuildUser).VoiceChannel;
             await save(msg);
             await audio.JoinChannel(guild, channel);
-            await audio.SendAudioAsync(guild, message.Channel, path);
+            await audio.SendAudioAsync(guild, path);
             await audio.LeaveChannel(guild);
 
         }

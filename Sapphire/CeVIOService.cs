@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CeVIO.Talk.RemoteService;
 using Discord;
 
@@ -11,12 +7,11 @@ namespace Sapphire
     class CeVIOService
     {
         private Talker talker;
-        public CeVIOService(string cast)
+        public CeVIOService(string cast = "IA")
         {
             ServiceControl.StartHost(false);
             talker = new Talker();
             setCast(cast);
-            setVolume(100);
         }
 
         public void speak(string text)
@@ -24,10 +19,10 @@ namespace Sapphire
             SpeakingState state = talker.Speak(text);
             state.Wait();
         }
-        
-        public async Task play(AudioService audio,IGuild guild, IMessageChannel channel,string text,string path = null)
+
+        public async Task play(AudioService audio, IGuild guild, IVoiceChannel channel, string text, string path = null)
         {
-            if(path == null)
+            if (path == null)
             {
                 path = "C:\\Sapphire\\cevio.wav";
             }
@@ -36,9 +31,12 @@ namespace Sapphire
                 System.IO.File.Delete(path);
                 await Task.Delay(50);
             }
+            setVolume(100);
             await Task.Delay(10);
             bool isSuccess = talker.OutputWaveToFile(text, path);
-            await audio.SendAudioAsync(guild, channel, path);
+            await audio.JoinChannel(guild, channel);
+            await audio.SendAudioAsync(guild, path);
+            await audio.LeaveChannel(guild);
         }
 
         public void setCast(string cast)
