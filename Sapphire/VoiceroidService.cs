@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using System.Windows.Automation;
 using System.Diagnostics;
-using System.Threading;
 
 namespace Sapphire
 {
@@ -43,7 +42,6 @@ namespace Sapphire
 
         }
 
-        // VOICEROID2 EDITOR ウインドウハンドル検索
         private static IntPtr GetVoiceroid2hWnd()
         {
             IntPtr hWnd = IntPtr.Zero;
@@ -66,13 +64,12 @@ namespace Sapphire
                     }
                 }
                 if (hWnd != IntPtr.Zero) break;
-                if (i < (RetryCount - 1)) Thread.Sleep(RetryWaitms);
+                if (i < (RetryCount - 1)) System.Threading.Thread.Sleep(RetryWaitms);
             }
 
             return hWnd;
         }
 
-        // テキスト転記と再生ボタン押下
         private void talk(string talkText)
         {
             talkText = header + talkText;
@@ -82,18 +79,14 @@ namespace Sapphire
             TreeScope ts1 = TreeScope.Descendants | TreeScope.Element;
             TreeScope ts2 = TreeScope.Descendants;
 
-            // アプリケーションウインドウ
             AutomationElement editorWindow = ae.FindFirst(ts1, new PropertyCondition(AutomationElement.ClassNameProperty, "Window"));
 
-            // 再生ボタン、テキストボックスが配置されているコンテナの名前は“c”
             AutomationElement customC = ae.FindFirst(ts1, new PropertyCondition(AutomationElement.AutomationIdProperty, "c"));
 
-            // テキストボックスにテキストを転記
             AutomationElement textBox = customC.FindFirst(ts2, new PropertyCondition(AutomationElement.AutomationIdProperty, "TextBox"));
             ValuePattern elem1 = textBox.GetCurrentPattern(ValuePattern.Pattern) as ValuePattern;
             elem1.SetValue(talkText);
 
-            // 再生ボタンを押す。再生ボタンはボタンのコレクション5番目(Index=4)
             AutomationElementCollection buttons = customC.FindAll(ts2, new PropertyCondition(AutomationElement.LocalizedControlTypeProperty, "ボタン"));
             InvokePattern elem2 = buttons[4].GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
             elem2.Invoke();
@@ -113,13 +106,10 @@ namespace Sapphire
             TreeScope ts1 = TreeScope.Descendants | TreeScope.Element;
             TreeScope ts2 = TreeScope.Descendants;
 
-            // アプリケーションウインドウ
             AutomationElement editorWindow = ae.FindFirst(ts1, new PropertyCondition(AutomationElement.ClassNameProperty, "Window"));
 
-            // 再生ボタン、テキストボックスが配置されているコンテナの名前は“c”
             AutomationElement customC = ae.FindFirst(ts1, new PropertyCondition(AutomationElement.AutomationIdProperty, "c"));
 
-            // テキストボックスにテキストを転記
             AutomationElement textBox = customC.FindFirst(ts2, new PropertyCondition(AutomationElement.AutomationIdProperty, "TextBox"));
             ValuePattern elem1 = textBox.GetCurrentPattern(ValuePattern.Pattern) as ValuePattern;
             elem1.SetValue(saveText);
@@ -128,19 +118,44 @@ namespace Sapphire
             InvokePattern elem2 = buttons[8].GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
             elem2.Invoke();
 
-            await Task.Delay(100);
-            AutomationElement saveWindow = ae.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "音声保存"));
-            AutomationElement okButton = saveWindow.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "OK"));
-            InvokePattern elem3 = okButton.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+            await Task.Delay(1);
+            AutomationElement saveWindow = null;
+            InvokePattern elem3 = null;
+            while (elem3 == null)
+            {
+                try
+                {
+                    saveWindow = ae.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "音声保存"));
+                    AutomationElement okButton = saveWindow.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "OK"));
+                    elem3 = okButton.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+                }
+                catch
+                {
+                    System.Threading.Thread.Sleep(100);
+                }
+            }
+
             elem3.Invoke();
 
-            Thread.Sleep(300);
-            AutomationElement fileExp = saveWindow.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "名前を付けて保存"));
-            AutomationElement saveButton = fileExp.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "保存(S)"));
-            InvokePattern elem4 = saveButton.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+            AutomationElement fileExp = null;
+            InvokePattern elem4 = null;
+            while (elem4 == null)
+            {
+                try
+                {
+                    fileExp = saveWindow.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "名前を付けて保存"));
+                    AutomationElement saveButton = fileExp.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "保存(S)"));
+                    elem4 = saveButton.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+                }
+                catch
+                {
+                    System.Threading.Thread.Sleep(100);
+                }
+            }
+
             elem4.Invoke();
 
-            Thread.Sleep(300);
+            System.Threading.Thread.Sleep(300);
             AutomationElement fileExp2 = fileExp.FindFirst(ts2, new PropertyCondition(AutomationElement.NameProperty, "名前を付けて保存"));
             if (fileExp2 != null)
             {
